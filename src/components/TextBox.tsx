@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Form, Input, Spinner } from "@heroui/react";
 
 export default function TextBox() {
-  const [,setSubmitted] = useState<{
+  const [, setSubmitted] = useState<{
     [k: string]: FormDataEntryValue;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function TextBox() {
 
   const speak = (message: string) => {
     if (!message.trim()) return;
-    speechSynthesis.cancel(); 
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = "en-US";
     speechSynthesis.speak(utterance);
