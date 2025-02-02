@@ -1,54 +1,78 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Form, Input, Spinner } from "@heroui/react";
 
 export default function TextBox() {
-  const [submitted, setSubmitted] = React.useState<{
+  const [,setSubmitted] = useState<{
     [k: string]: FormDataEntryValue;
   } | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [results, setResults] = React.useState<string[] | null>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<string[] | null>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [text, setText] = useState(
+    "Welcome to Necta Results Portal. Simply enter your registration number to get your results"
+  );
+
+  const speak = (message: string) => {
+    if (!message.trim()) return;
+    speechSynthesis.cancel(); 
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = "en-US";
+    speechSynthesis.speak(utterance);
+  };
+
+  // Speak when `text` changes
+  useEffect(() => {
+    speak(text);
+  }, [text]);
+
+  useEffect(() => {
+    speak(
+      "Welcome to Necta Results Portal. Simply enter your registration number to get your results"
+    );
+  }, []);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     const data = Object.fromEntries(new FormData(e.currentTarget));
+
     try {
-      const results = await fetch("https://necta-mock-api.onrender.com/results");
-      const individualResults = await results.json();
+      const response = await fetch(
+        "https://necta-mock-api.onrender.com/results"
+      );
+      const individualResults = await response.json();
+
+      if (!Array.isArray(individualResults) || individualResults.length === 0) {
+        throw new Error("No results found");
+      }
+
       setSubmitted(data);
       setResults(individualResults);
-      console.log(individualResults)
+      const resultsText = individualResults
+        .map((r: any) => `${r.subject}: ${r.grade}`)
+        .join(", ");
+
+      setText(
+        `Here are the results for registration number ${data.registrationNumber}: ${resultsText}`
+      );
       setError(null);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
-      setIsLoading(false);
-      setSubmitted(null);
+      setText("An error occurred while fetching the results.");
       setError("An error occurred");
-      setTimeout(() => setError(""), 3000);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
-    <Form
-      className="max-w-xl mx-auto w-full mt-5 px-4"
-      validationBehavior="native"
-      onSubmit={onSubmit}
-    >
+    <Form className="max-w-xl mx-auto w-full mt-5 px-4" onSubmit={onSubmit}>
       <Input
         name="registrationNumber"
         placeholder="Enter your registration number"
         type="text"
         className="bg-white rounded"
-        validate={(value) => {
-          if (value.length < 3) {
-            return "Registration must be at least 8 characters long";
-          }
-
-          return value === "00000000" ? "Nice try!" : null;
-        }}
       />
       <Button
         color="primary"
@@ -57,19 +81,20 @@ export default function TextBox() {
       >
         {isLoading ? <Spinner /> : "Submit"}
       </Button>
-      {submitted && (
-        <div className="text-small text-default-500 text-white">
-          Here are the results of the student with registration number {JSON.stringify(submitted).split(":")[1].slice(0,-1)}:
-        </div>
-      )}
       {error && (
-        <div className="text-small text-default-500 text-red-500 text-center w-full">
+        <div className="text-small text-red-500 text-center w-full">
           {error}
         </div>
       )}
       {results && results.length > 0 && (
-        <div className="text-small text-default-500 text-white">
-          <code>{results.map((r:any, i:number) => <div key={i} className="flex items-center gap-2">{r.subject} - {r.grade}</div>)}</code>
+        <div className="text-small text-white">
+          <code>
+            {results.map((r: any, i: number) => (
+              <div key={i} className="flex items-center gap-2">
+                {r.subject} - {r.grade}
+              </div>
+            ))}
+          </code>
         </div>
       )}
     </Form>

@@ -1,8 +1,15 @@
 import TextBox from "./TextBox";
 
-export default function Hero() {
+export default function Hero() {    
+      const speak = (message: string) => {
+        if (!message.trim()) return;
+        speechSynthesis.cancel(); // Stop ongoing speech
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = "en-US";
+        speechSynthesis.speak(utterance);
+      };
   return (
-    <div className="relative h-[92vh] bg-gray-500 flex items-center justify-center">
+    <div onClick={() => speak("Welcome to Necta Results Portal. Simply enter your registration number to get your results")} className="relative h-[92vh] bg-gray-500 flex items-center justify-center">
       <img
         src="/logo-alt.jpg"
         alt="necta-logo"
